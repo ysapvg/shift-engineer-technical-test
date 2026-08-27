@@ -79,7 +79,7 @@ Example output:
 
 ### Image Size
 
-    ![Docker image](screenshots/01-docker-image-size.png)
+![Docker image](screenshots/01-docker-image-size.png)
 
 The final image uses `scratch`, so the Go compiler, source code, and build
 dependencies are not included in the runtime image. Only the compiled
