@@ -109,7 +109,7 @@ Expected response:
 
 ### Docker Build
 
-![Docker build](screenshots/01-docker-build.png)
+![Docker build](screenshots/02-docker-build.png)
 
 ### Image Size
 
