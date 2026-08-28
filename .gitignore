@@ -20,3 +20,9 @@ go.work.sum
 # IDE
 .idea/
 .vscode/
+
+# Go binaries
+*.exe
+*.test
+go_test*
+go_service*

@@ -127,7 +127,97 @@ Expected response:
 
 # Part II — Deploy
 
-> To be completed.
+## 4. Run the Container
+
+The Docker image is run as a detached container with port `8080` exposed
+to the host. The `unless-stopped` restart policy is used so the container
+automatically restarts if the application process exits unexpectedly.
+
+### Run Command
+
+    docker run -d --name go-service -p 8080:8080 --restart unless-stopped go-service:dev
+
+### Verification
+
+    docker ps
+
+    docker inspect -f "{{.HostConfig.RestartPolicy.Name}}" go-service
+
+Expected restart policy:
+
+    unless-stopped
+
+The application can be accessed from the host using:
+
+    curl http://localhost:8080
+
+---
+
+## 5. Binary Hotfix
+
+The `docker cp` approach was chosen to simulate a small production hotfix.
+
+First, the existing container is verified to be running the original
+application version:
+
+    curl http://localhost:8080
+
+    Hello, DevOps! version=1.0.0
+
+A new statically linked Linux binary is then built on the host with the
+updated version:
+
+    CGO_ENABLED=0
+    GOOS=linux
+
+    go build -ldflags="-w -s -X main.version=1.0.1" -o go_test_v101 .
+
+The new binary is copied directly into the existing container:
+
+    docker cp go_test_v101 go-service:/src
+
+The container is then restarted:
+
+    docker restart go-service
+
+No Docker image rebuild or container removal is performed during the
+hotfix process.
+
+---
+
+## 6. Hotfix Verification
+
+After restarting the existing container, the endpoint is queried again:
+
+    curl http://localhost:8080
+
+Expected response:
+
+    Hello, DevOps! version=1.0.1
+
+This demonstrates that the running binary was successfully replaced from
+version `1.0.0` to `1.0.1` without rebuilding the Docker image.
+
+The container remains the same deployment unit throughout the process,
+while only the executable binary is replaced.
+
+### Before Hotfix
+
+![Before binary swap](screenshots/05-before-swap.png)
+
+### Binary Swap and Restart
+
+![Binary swap](screenshots/06-binary-swap.png)
+
+
+### Hotfix Approach
+
+I chose `docker cp` because it is simple and fast for a small hotfix.
+I can build the updated binary on the host, copy it into the existing
+container, and restart it without rebuilding the image or creating a new
+container. This keeps the downtime minimal. The downside is that the
+container filesystem becomes mutable, so this is better for quick hotfixes
+than normal production deployments.
 
 ---
 
