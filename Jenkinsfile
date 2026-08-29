@@ -46,18 +46,17 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-            docker run --rm \
-              -v "$PWD:/app" \
-              -w /app \
-              golang:1.27-alpine \
-              sh -c 'CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s -X main.version=$VERSION" -o go_service_hotfix .'
+            docker rm -f go-service || true
 
-            docker cp go_service_hotfix go-service:/src
-            docker restart go-service
+            docker run -d \
+              --name go-service \
+              -p 8080:8080 \
+              ${IMAGE}:${VERSION}
 
             sleep 2
+
             curl http://host.docker.internal:8080
-            '''
+        '''
             }
         }
     }
