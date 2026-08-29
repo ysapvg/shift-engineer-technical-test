@@ -2,7 +2,12 @@
 FROM golang:1.27-alpine AS builder
 WORKDIR /src
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-w -s -X main.version=1.0.0" -o go_test . 
+
+ARG VERSION=dev
+
+RUN CGO_ENABLED=0 go build \
+    -ldflags="-w -s -X main.version=${VERSION}" \   
+    -o go_test .
 
 # STAGE 2 : Create a minimal image using the scratch base image
 FROM scratch
