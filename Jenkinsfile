@@ -2,11 +2,10 @@ pipeline {
     agent any
 
     environment {
-        IMAGE = "go-service"
+        IMAGE = 'go-service'
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -16,12 +15,14 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    docker run --rm \
-                      -v "$PWD:/app" \
-                      -w /app \
-                      golang:1.27-alpine \
-                      go test ./...
-                '''
+            docker build \
+              --target builder \
+              -t go-service-test .
+
+            docker run --rm \
+              go-service-test \
+              go test ./...
+        '''
             }
         }
 
@@ -44,9 +45,19 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh """
-                    echo "Deploying ${IMAGE}:${VERSION}"
-                """
+                sh '''
+            docker run --rm \
+              -v "$PWD:/app" \
+              -w /app \
+              golang:1.27-alpine \
+              sh -c 'CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s -X main.version=$VERSION" -o go_service_hotfix .'
+
+            docker cp go_service_hotfix go-service:/src
+            docker restart go-service
+
+            sleep 2
+            curl http://host.docker.internal:8080
+            '''
             }
         }
     }
